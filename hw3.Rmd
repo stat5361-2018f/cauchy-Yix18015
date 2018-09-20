@@ -1,0 +1,509 @@
+---
+title: "Cauchy Project Stat5630 HW3"
+author: "Yiyi Xu"
+date: "9/18/2018"
+output:
+  html_document:
+    df_print: paged
+---
+## Part 1  Math Equation 
+
+ \begin{align*}
+        L(\theta;x)&=\prod_{i=1}^{n}f(x_{i};\theta)\ \ \ \theta\in\Omega\\
+        &=\prod_{i=1}^{n}\frac{1}{\pi[1+(x-\theta)^{2}]}\\
+        &=(\frac{1}{\pi})^n \cdot \prod_{i=1}^{n}[1+(x-\theta)^{2}]^{-1}\\
+        \\
+        l(\theta)&=\ln L(\theta;X)\\
+        &=\ln((\frac{1}{\pi})^n\prod_{i=1}^n\frac{1}{[1+(x_i-\theta)^2]})\\
+        &=\ln((\frac{1}{\pi})^n)+\ln(\prod_{i=1}^n\frac{1}{[1+(x_i-\theta)^2]})\\
+        &=-n\ln(\pi) - \sum_{i=1}^n \ln([1+(x_i-\theta)^2])\\
+        \\
+        l'(\theta)&= -\sum_{i=1}^n \frac{-2(x_i-\theta)}{1+(x_i-\theta)^2}\\
+        &=-2 \sum_{i=1}^n \frac{\theta-x_i}{1+(\theta-x_i)^2}\\
+        \\
+        l''(\theta)&= -2 \sum_{i=1}^n(\frac{1}{1+(x_i-\theta)^2}+\frac{(\theta-x_i)(-2)(\theta-x_i)}{(1+(x-\theta)^2)^2})\\
+        &=-2 \sum_{i=1}^n\frac{1-(\theta-x_i)^2)}{(1+(\theta-x_i)^2)^2}\\
+        \\
+        I(\theta)&=-\int_{-\infty} ^{\infty} {-2 \sum_{i=1}^n\frac{1-(\theta-x_i)^2)}{(1+(\theta-x_i)^2))^2}  \frac{1}{\pi[1+(x-\theta)^{2}]}} \,{\rm d}x\\
+        &=\frac{2n}{\pi} \int_{-\infty}^{\infty}  {\frac{1-(\theta-x)^2)}{(1+(\theta-x)^2))^3}}\,{\rm d}x\\
+        &=\frac{2n}{\pi} \int_{-\infty}^{\infty} {\frac{1-x^2)}{(1+x^2))^3}}\,{\rm d}x\\
+        &=\frac{2n}{\pi} \int_{-\infty}^{\infty} {-\frac{1+x^2-2)}{(1+x^2))^3}}\,{\rm d}x\\
+        &=\frac{2n}{\pi} \int_{-\infty}^{\infty} {-\frac{1)}{(1+x^2))^2}+2\frac{1)}{(1+x^2))^3}}\,{\rm d}x\\
+        &=\frac{2n}{\pi}[\frac{arctan(x)}{4}+\frac{x^3+3x}{4x^4 +8x^2 +4}]_{-\infty} ^{\infty}  \\
+        &=\frac{2n}{\pi} \frac{\pi}{4}\\
+        &=\frac{n}{2}\\
+    \end{align*}
+  
+
+
+
+## Part 2 Figure for loglikelihood function against $\theta$
+
+From figure, we can see the loglikellihood function against $\theta$ reach the maximize when $\theta$ near 6. 
+
+```{r }
+
+set.seed(20180909)
+X <- rcauchy(10, location = 5, scale =1 )
+n <- 10
+
+
+l <- function(x, theta, n){
+  - n*log(pi, base = exp(1)) - sum(log(1 + (theta - x)^2, base = exp(1)))
+}
+
+
+theta <- seq(0, 10, 0.1)
+L <- numeric(0)
+for (i in 1: length(theta)){
+   L[i] <- l(X,theta[i],10)
+}
+ sp=spline(theta,L,n=1000)
+ plot(sp,col="red",type="l",xlim=c(0,10),ylim=c(-55,-25),lwd=2,xlab="theta",ylab="l(theta)",sub="loglikehood function against theta",col.main="green",font.main=2)
+ 
+```
+
+
+## Part 3 the Newton-Raphson method 
+
+
+
+```{r}
+l1 <- function(x, theta, n){
+  -2*sum((theta-x)/(1 + (theta - x)^2))   
+}
+l2 <- function(x,theta,n){
+  -2*sum((1- (theta-x)^2)/(((1 + (theta - x)^2))^2))   
+}
+Newton.Method <- function(y,f,f1){
+   y0 <- y
+   for(i in 1:100){
+    y1 <- y0 - f(X,y0,10)/f1(X,y0,10)
+    if(abs(y1-y0)<0.0001) 
+      break
+    y0 <- y1
+   }
+   return(data.frame(init=y,root=y1,iter=i))
+}
+```
+
+## comment 
+From the Rood in Newton Method Table, when initial value eqauls from 20 to -10, there are only 6 numbers can reach the approximate root in 100 iterations, which are 10.5, 9.0, 6.5,6.0, 5.5 and 5.0. 
+the approximate root is 5.6854 which is near $\theta= 5$ or $\theta = 6$. Therefore, we can get the result that Newton-Raphson Method is not always converge to the root. The Newton-Raphson method workring for "local" convergence, so we have to start the initial value which close to the root. 
+If we start the initial value near the root, then the Newton-Raphson Method can quickly reach the root in less ten loops. However, if we start initial value not near the root, the Newton-Raphson is not working.
+```{r pressure, echo=FALSE}
+newton1 <- rbind(
+ Newton.Method(20 ,l1,l2)
+,Newton.Method(19.5,l1,l2)
+,Newton.Method(19.0,l1,l2)
+,Newton.Method(18.5,l1,l2)
+,Newton.Method(18.0,l1,l2)
+,Newton.Method(17.5,l1,l2)
+,Newton.Method(17.0 ,l1,l2)
+,Newton.Method(16.5,l1,l2)
+,Newton.Method(16.0,l1,l2)
+,Newton.Method(15.5,l1,l2)
+,Newton.Method(15.0,l1,l2)
+,Newton.Method(14.5,l1,l2)
+,Newton.Method(14.0 ,l1,l2)
+,Newton.Method(13.5,l1,l2)
+,Newton.Method(13.0,l1,l2)
+,Newton.Method(12.5,l1,l2)
+,Newton.Method(12.0,l1,l2)
+,Newton.Method(11.5,l1,l2)
+,Newton.Method(11.0,l1,l2)
+,Newton.Method(10.5,l1,l2)
+,Newton.Method(10 ,l1,l2)
+,Newton.Method(9.5,l1,l2)
+,Newton.Method(9.0,l1,l2)
+,Newton.Method(8.5,l1,l2)
+,Newton.Method(8.0,l1,l2)
+,Newton.Method(7.5,l1,l2)
+,Newton.Method(7.0,l1,l2)
+,Newton.Method(6.5,l1,l2)
+,Newton.Method(6.0,l1,l2)
+,Newton.Method(5.5,l1,l2)
+,Newton.Method(5.0,l1,l2)
+,Newton.Method(4.5,l1,l2)
+,Newton.Method(4.0,l1,l2)
+,Newton.Method(3.5,l1,l2)
+,Newton.Method(3.0,l1,l2)
+,Newton.Method(2.5,l1,l2)
+,Newton.Method(2.0,l1,l2)
+,Newton.Method(1.5,l1,l2)
+,Newton.Method(1.0,l1,l2)
+,Newton.Method(0.5,l1,l2)
+,Newton.Method(   0,l1,l2)
+,Newton.Method(-0.5,l1,l2)
+,Newton.Method(-1.0,l1,l2)
+,Newton.Method(-1.5,l1,l2)
+,Newton.Method(-2.0,l1,l2)
+,Newton.Method(-2.5,l1,l2)
+,Newton.Method(-3.0,l1,l2)
+,Newton.Method(-3.5,l1,l2)
+,Newton.Method(-4.0,l1,l2)
+,Newton.Method(-4.5,l1,l2)
+,Newton.Method(-5.0,l1,l2)
+,Newton.Method(-5.5,l1,l2)
+,Newton.Method(-6.0,l1,l2)
+,Newton.Method(-6.5,l1,l2)
+,Newton.Method(-7.0,l1,l2)
+,Newton.Method(-7.5,l1,l2)
+,Newton.Method(-8.0,l1,l2)
+,Newton.Method(-8.5,l1,l2)
+,Newton.Method(-9.0,l1,l2)
+,Newton.Method(-9.5,l1,l2)
+,Newton.Method(-10 ,l1,l2)
+)
+
+library(knitr)
+library(kableExtra)
+kable(newton1,caption = "Root in Newton Method" ) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+
+
+```
+
+## Part 4 Fixed Point Iterations 
+
+ 
+```{r} 
+
+Fixed.Point <- function(x,f1,alpha){
+  x0 <- x
+  for(i in 1:1000){
+    x1 <- alpha*f1(X,x0,10)+ x0
+    if(abs(x1-x0)<0.0001) 
+      break
+    x0 <- x1
+  }
+  return(data.frame(ini=x,root=x1,iter=i))
+}
+```
+## comment 
+
+By comparing the result of different $\alpha$ value, we can see that when $\alpha$ equals 1 and 0.64, no matter where the initial value start, the result always near the real root in 1000 iterations. However, none of them reach the real root. So the result is not accurate. 
+But when $\alpha = 0.25$, we can see all of the initial value reach the real root in less than 50 iterations. and for initial value near real value, the iteration even less than 10. 
+So the accuracy of Fixed Point Iteration Method depends on the $\alpha$
+
+
+
+## when alpha = 1
+```{r, echo=FALSE}
+alpha1 <- rbind(
+ Fixed.Point(20  ,l1,1)
+,Fixed.Point(19.5,l1,1)
+,Fixed.Point(19.0,l1,1)
+,Fixed.Point(18.5,l1,1)
+,Fixed.Point(18.0,l1,1)
+,Fixed.Point(17.5,l1,1)
+,Fixed.Point(17.0,l1,1)
+,Fixed.Point(16.5,l1,1)
+,Fixed.Point(16.0,l1,1)
+,Fixed.Point(15.5,l1,1)
+,Fixed.Point(15.0,l1,1)
+,Fixed.Point(14.5,l1,1)
+,Fixed.Point(14.0,l1,1)
+,Fixed.Point(13.5,l1,1)
+,Fixed.Point(13.0,l1,1)
+,Fixed.Point(12.5,l1,1)
+,Fixed.Point(12.0,l1,1)
+,Fixed.Point(11.5,l1,1)
+,Fixed.Point(11.0,l1,1)
+,Fixed.Point(10.5,l1,1)
+,Fixed.Point(10 ,l1,1)
+,Fixed.Point(9.5,l1,1)
+,Fixed.Point(9.0,l1,1)
+,Fixed.Point(8.5,l1,1)
+,Fixed.Point(8.0,l1,1)
+,Fixed.Point(7.5,l1,1)
+,Fixed.Point(7.0,l1,1)
+,Fixed.Point(6.5,l1,1)
+,Fixed.Point(6.0,l1,1)
+,Fixed.Point(5.5,l1,1)
+,Fixed.Point(5.0,l1,1)
+,Fixed.Point(4.5,l1,1)
+,Fixed.Point(4.0,l1,1)
+,Fixed.Point(3.5,l1,1)
+,Fixed.Point(3.0,l1,1)
+,Fixed.Point(2.5,l1,1)
+,Fixed.Point(2.0,l1,1)
+,Fixed.Point(1.5,l1,1)
+,Fixed.Point(1.0,l1,1)
+,Fixed.Point(0.5,l1,1)
+,Fixed.Point(   0,l1,1)
+,Fixed.Point(-0.5,l1,1)
+,Fixed.Point(-1.0,l1,1)
+,Fixed.Point(-1.5,l1,1)
+,Fixed.Point(-2.0,l1,1)
+,Fixed.Point(-2.5,l1,1)
+,Fixed.Point(-3.0,l1,1)
+,Fixed.Point(-3.5,l1,1)
+,Fixed.Point(-4.0,l1,1)
+,Fixed.Point(-4.5,l1,1)
+,Fixed.Point(-5.0,l1,1)
+,Fixed.Point(-5.5,l1,1)
+,Fixed.Point(-6.0,l1,1)
+,Fixed.Point(-6.5,l1,1)
+,Fixed.Point(-7.0,l1,1)
+,Fixed.Point(-7.5,l1,1)
+,Fixed.Point(-8.0,l1,1)
+,Fixed.Point(-8.5,l1,1)
+,Fixed.Point(-9.0,l1,1)
+,Fixed.Point(-9.5,l1,1)
+,Fixed.Point(-10 ,l1,1)
+)
+
+library(knitr)
+library(kableExtra)
+kable(alpha1,caption = "Root| alpha = 1" ) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+## when alphs = 0.64
+```{r , echo=FALSE}
+alpha2 <- rbind(
+ Fixed.Point(20  ,l1,0.64)
+,Fixed.Point(19.5,l1,0.64)
+,Fixed.Point(19.0,l1,0.64)
+,Fixed.Point(18.5,l1,0.64)
+,Fixed.Point(18.0,l1,0.64)
+,Fixed.Point(17.5,l1,0.64)
+,Fixed.Point(17.0,l1,0.64)
+,Fixed.Point(16.5,l1,0.64)
+,Fixed.Point(16.0,l1,0.64)
+,Fixed.Point(15.5,l1,0.64)
+,Fixed.Point(15.0,l1,0.64)
+,Fixed.Point(14.5,l1,0.64)
+,Fixed.Point(14.0,l1,0.64)
+,Fixed.Point(13.5,l1,0.64)
+,Fixed.Point(13.0,l1,0.64)
+,Fixed.Point(12.5,l1,0.64)
+,Fixed.Point(12.0,l1,0.64)
+,Fixed.Point(11.5,l1,0.64)
+,Fixed.Point(11.0,l1,0.64)
+,Fixed.Point(10.5,l1,0.64)
+,Fixed.Point(10 ,l1,0.64)
+,Fixed.Point(9.5,l1,0.64)
+,Fixed.Point(9.0,l1,0.64)
+,Fixed.Point(8.5,l1,0.64)
+,Fixed.Point(8.0,l1,0.64)
+,Fixed.Point(7.5,l1,0.64)
+,Fixed.Point(7.0,l1,0.64)
+,Fixed.Point(6.5,l1,0.64)
+,Fixed.Point(6.0,l1,0.64)
+,Fixed.Point(5.5,l1,0.64)
+,Fixed.Point(5.0,l1,0.64)
+,Fixed.Point(4.5,l1,0.64)
+,Fixed.Point(4.0,l1,0.64)
+,Fixed.Point(3.5,l1,0.64)
+,Fixed.Point(3.0,l1,0.64)
+,Fixed.Point(2.5,l1,0.64)
+,Fixed.Point(2.0,l1,0.64)
+,Fixed.Point(1.5,l1,0.64)
+,Fixed.Point(1.0,l1,0.64)
+,Fixed.Point(0.5,l1,0.64)
+,Fixed.Point(   0,l1,0.64)
+,Fixed.Point(-0.5,l1,0.64)
+,Fixed.Point(-1.0,l1,0.64)
+,Fixed.Point(-1.5,l1,0.64)
+,Fixed.Point(-2.0,l1,0.64)
+,Fixed.Point(-2.5,l1,0.64)
+,Fixed.Point(-3.0,l1,0.64)
+,Fixed.Point(-3.5,l1,0.64)
+,Fixed.Point(-4.0,l1,0.64)
+,Fixed.Point(-4.5,l1,0.64)
+,Fixed.Point(-5.0,l1,0.64)
+,Fixed.Point(-5.5,l1,0.64)
+,Fixed.Point(-6.0,l1,0.64)
+,Fixed.Point(-6.5,l1,0.64)
+,Fixed.Point(-7.0,l1,0.64)
+,Fixed.Point(-7.5,l1,0.64)
+,Fixed.Point(-8.0,l1,0.64)
+,Fixed.Point(-8.5,l1,0.64)
+,Fixed.Point(-9.0,l1,0.64)
+,Fixed.Point(-9.5,l1,0.64)
+,Fixed.Point(-10 ,l1,0.64)
+)
+library(knitr)
+library(kableExtra)
+kable(alpha2,caption = "Root| alpha = 0.64" ) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+## when alpha = 0.25
+```{r , echo=FALSE}
+alpha3 <- rbind(
+ Fixed.Point(20  ,l1,0.25)
+,Fixed.Point(19.5,l1,0.25)
+,Fixed.Point(19.0,l1,0.25)
+,Fixed.Point(18.5,l1,0.25)
+,Fixed.Point(18.0,l1,0.25)
+,Fixed.Point(17.5,l1,0.25)
+,Fixed.Point(17.0,l1,0.25)
+,Fixed.Point(16.5,l1,0.25)
+,Fixed.Point(16.0,l1,0.25)
+,Fixed.Point(15.5,l1,0.25)
+,Fixed.Point(15.0,l1,0.25)
+,Fixed.Point(14.5,l1,0.25)
+,Fixed.Point(14.0,l1,0.25)
+,Fixed.Point(13.5,l1,0.25)
+,Fixed.Point(13.0,l1,0.25)
+,Fixed.Point(12.5,l1,0.25)
+,Fixed.Point(12.0,l1,0.25)
+,Fixed.Point(11.5,l1,0.25)
+,Fixed.Point(11.0,l1,0.25)
+,Fixed.Point(10.5,l1,0.25)
+,Fixed.Point(10 ,l1,0.25)
+,Fixed.Point(9.5,l1,0.25)
+,Fixed.Point(9.0,l1,0.25)
+,Fixed.Point(8.5,l1,0.25)
+,Fixed.Point(8.0,l1,0.25)
+,Fixed.Point(7.5,l1,0.25)
+,Fixed.Point(7.0,l1,0.25)
+,Fixed.Point(6.5,l1,0.25)
+,Fixed.Point(6.0,l1,0.25)
+,Fixed.Point(5.5,l1,0.25)
+,Fixed.Point(5.0,l1,0.25)
+,Fixed.Point(4.5,l1,0.25)
+,Fixed.Point(4.0,l1,0.25)
+,Fixed.Point(3.5,l1,0.25)
+,Fixed.Point(3.0,l1,0.25)
+,Fixed.Point(2.5,l1,0.25)
+,Fixed.Point(2.0,l1,0.25)
+,Fixed.Point(1.5,l1,0.25)
+,Fixed.Point(1.0,l1,0.25)
+,Fixed.Point(0.5,l1,0.25)
+,Fixed.Point(   0,l1,0.25)
+,Fixed.Point(-0.5,l1,0.25)
+,Fixed.Point(-1.0,l1,0.25)
+,Fixed.Point(-1.5,l1,0.25)
+,Fixed.Point(-2.0,l1,0.25)
+,Fixed.Point(-2.5,l1,0.25)
+,Fixed.Point(-3.0,l1,0.25)
+,Fixed.Point(-3.5,l1,0.25)
+,Fixed.Point(-4.0,l1,0.25)
+,Fixed.Point(-4.5,l1,0.25)
+,Fixed.Point(-5.0,l1,0.25)
+,Fixed.Point(-5.5,l1,0.25)
+,Fixed.Point(-6.0,l1,0.25)
+,Fixed.Point(-6.5,l1,0.25)
+,Fixed.Point(-7.0,l1,0.25)
+,Fixed.Point(-7.5,l1,0.25)
+,Fixed.Point(-8.0,l1,0.25)
+,Fixed.Point(-8.5,l1,0.25)
+,Fixed.Point(-9.0,l1,0.25)
+,Fixed.Point(-9.5,l1,0.25)
+,Fixed.Point(-10 ,l1,0.25)
+)
+library(knitr)
+library(kableExtra)
+kable(alpha3,caption = "Root| alpha =0.25" ) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+## part 5 fisher scoring 
+
+
+```{r}
+In <- 5
+fisher.scoring <- function(x,f1,In){
+  x0 <- x
+  for(i in 1:1000){
+    x1 <- x0 + f1(X,x0,10)/In
+    if(abs(x1-x0)<0.0001)
+      break
+    x0 <- x1
+  }
+  return(x1)
+}
+
+Newton.Method2 <- function(y,f,f1){
+   y0 <- y
+   for(i in 1:100){
+    y1 <- y0 - f(X,y0,10)/f1(X,y0,10)
+    if(abs(y1-y0)<0.0001) 
+      break
+    y0 <- y1
+   }
+  
+   return(data.frame(resultOfFisher=y,iter=i,root=y1))
+}
+
+```
+## Comment
+
+Fisher Scoring and the Newton Method is the most faster and accturate way to find the root as no matter where the initial value start, it reach the root. 
+
+```{r , echo=FALSE}
+NM <- rbind(
+ Newton.Method2(fisher.scoring(20  ,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(19.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(19.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(18.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(18.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(17.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(17.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(16.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(16.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(15.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(15.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(14.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(14.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(13.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(13.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(12.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(12.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(11.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(11.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(10.5,l1,5),l1,l2)  
+,Newton.Method2(fisher.scoring(10,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(9.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(9.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(8.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(8.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(7.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(7.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(6.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(6.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(5.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(5.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(4.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(4.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(3.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(3.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(2.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(2.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(1.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(1.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(0.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(0,l1,5),l1,l2)   
+,Newton.Method2(fisher.scoring(-0.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-1.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-1.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-2.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-2.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-3.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-3.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-4.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-4.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-5.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-5.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-6.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-6.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-7.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-7.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-8.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-8.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-9.0,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-9.5,l1,5),l1,l2)    
+,Newton.Method2(fisher.scoring(-10 ,l1,5),l1,l2)    
+)
+library(knitr)
+library(kableExtra)
+kable(NM,caption = "Root of Fisher Scoring and Newton method" ) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+
+```
+
+
+
